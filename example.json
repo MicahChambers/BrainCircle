@@ -1,0 +1,52 @@
+{
+"nodes" : { 
+	"left.thalamus" : { 
+		"thickness" : 10,
+		"volume" : 20
+	},
+	"right.thalamus" : { 
+		"thickness" : 11,
+		"volume" : 18
+	},
+	"right.mfg" : { 
+		"thickness" : 71,
+		"volume" : 14
+	},
+	"left.mfg" : { 
+		"thickness" : 13,
+		"volume" : 15
+	},
+	"right.pfc" : { 
+		"thickness" : 71,
+		"volume" : 14
+	},
+	"left.pfc" : { 
+		"thickness" : 23,
+		"volume" : 14
+	}
+},
+"clusters": {
+	"location" : {
+		"frontal" : ["right.pfc", "left.pfc", "right.mfg", "left.mfg"],
+		"subcortex" : ["left.thalamus", "right.thalamus"]
+	},
+	"louvain" : {
+		"group1" : ["left.pfc", "left.mfg", "right.thalamus"],
+		"group2" : ["right.pfc", "right.mfg", "left.thalamus"]
+	}
+},
+"connections": {
+	"direct" : [
+		["left.thalamus", "right.thalamus", 1],
+		["left.mfg", "right.thalamus", 4],
+		["left.thalamus", "right.pfc", 8],
+		["left.pfc", "right.pfc", 0.14]
+	],
+	"shortest" : [
+		["left.thalamus", "right.thalamus", 102],
+		["left.mfg", "right.thalamus", 49],
+		["left.thalamus", "right.pfc", 19],
+		["left.pfc", "right.pfc", 100]
+	]
+}
+}
