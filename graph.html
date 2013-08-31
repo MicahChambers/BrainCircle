@@ -63,10 +63,32 @@
 
 (function() {
   packages = {
+	sort: function(a, b) 
+	{
+		if(a.key < b.key) return -1;
+		if(a.key == b.key) return 0;
+		if(a.key > b.key) return 1 ;
+	},
+	
+	rsort: function(a, b) 
+	{
+		if(a.key < b.key) return 1;
+		if(a.key == b.key) return 0;
+		if(a.key > b.key) return -1;
+	},
 
-    // Lazily construct the package hierarchy from class names.
+    // Construct hierarchy from side.lobe.region
 	root: function(regions) 
 	{
+		var order = ["right.frontal", "right.insular", "right.limbic", 
+					"right.temporal", "right.parietal", "right.occipital",
+					"right.subcortical", "right.cerebellum", "none.brainstem",
+					"left.cerebellum", "left.subcortical", "left.occipital",
+					"left.parietal", "left.temporal", "left.limbic", 
+					"left.insular", "left.frontal"];
+		var order = ["Right", "none", "Left"]
+		var order = ["Frontal", "Insular", "Limbic", "Temporal", "Parietal", 
+					"Occipital", "Sucortical", "Cerebellum", "Brainstem"]
 		var map = {};
 		var key;
 
@@ -86,9 +108,28 @@
 		for(var region in regions) {
 			find(regions[region].memberships[0], regions[region])
 			regions[region].id = region;
-			key = regions[region].hemisphere.concat("-").concat(regions[region].key);
-			regions[region].key = key;
+//			key = regions[region].hemisphere.concat("-").concat(regions[region].key);
+//			regions[region].key = key;
 		}
+
+		//sort the hemispheres
+		map[""].children.sort(packages.sort);
+
+		//sort the lobes
+		map[""].children[0].children.sort(packages.sort);
+		map[""].children[1].children.sort(packages.sort);
+		map[""].children[2].children.sort(packages.rsort);
+
+		//sort the lowest layer
+		map[""].children[0].children.forEach(function(rr) {
+			rr.children.sort(packages.sort);
+		});
+		map[""].children[1].children.forEach(function(rr) {
+			rr.children.sort(packages.sort);
+		});
+		map[""].children[2].children.forEach(function(rr) {
+			rr.children.sort(packages.rsort);
+		});
 
 		return map[""];
 	},
@@ -134,9 +175,22 @@ var w = 1280,
 
 var splines = [];
 
+var hemisort = function(a,b) 
+{
+	if(a.hemisphere == "left") {
+		if(a.id < b.id) return -1;
+		if(a.id == b.id) return 0;
+		if(a.id > b.id) return 1;
+	} else {
+		if(a.id < b.id) return 1;
+		if(a.id == b.id) return 0;
+		if(a.id > b.id) return -1;
+	}
+};
+
 var cluster = d3.layout.cluster()
     .size([360, ry - 120])
-    .sort(function(a, b) { return d3.ascending(a.key, b.key); });
+    .sort(hemisort);
 
 var bundle = d3.layout.bundle();
 
@@ -174,21 +228,21 @@ d3.json("tmp.json", function(regions) {
   var path = svg.selectAll("path.link")
       .data(links)
     .enter().append("svg:path")
-      .attr("class", function(d) { return "link source-" + d.source.key + " target-" + d.target.key; })
+      .attr("class", function(d) { return "link source-" + d.source.id + " target-" + d.target.id; })
       .attr("d", function(d, i) { return line(splines[i]); });
 
   svg.selectAll("g.node")
       .data(nodes.filter(function(n) { return !n.children; }))
     .enter().append("svg:g")
       .attr("class", "node")
-      .attr("id", function(d) { return "node-" + d.key; })
+      .attr("id", function(d) { return "node-" + d.id; })
       .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
     .append("svg:text")
       .attr("dx", function(d) { return d.x < 180 ? 8 : -8; })
       .attr("dy", ".31em")
       .attr("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
       .attr("transform", function(d) { return d.x < 180 ? null : "rotate(180)"; })
-      .text(function(d) { return d.key; })
+      .text(function(d) { return d.tag; })
       .on("mouseover", mouseover)
       .on("mouseout", mouseout);
 
@@ -241,21 +295,21 @@ function mouseup() {
 }
 
 function mouseover(d) {
-  svg.selectAll("path.link.target-" + d.key)
+  svg.selectAll("path.link.target-" + d.id)
       .classed("target", true)
       .each(updateNodes("source", true));
 
-  svg.selectAll("path.link.source-" + d.key)
+  svg.selectAll("path.link.source-" + d.id)
       .classed("source", true)
       .each(updateNodes("target", true));
 }
 
 function mouseout(d) {
-  svg.selectAll("path.link.source-" + d.key)
+  svg.selectAll("path.link.source-" + d.id)
       .classed("source", false)
       .each(updateNodes("target", false));
 
-  svg.selectAll("path.link.target-" + d.key)
+  svg.selectAll("path.link.target-" + d.id)
       .classed("target", false)
       .each(updateNodes("source", false));
 }
@@ -263,7 +317,7 @@ function mouseout(d) {
 function updateNodes(name, value) {
   return function(d) {
     if (value) this.parentNode.appendChild(this);
-    svg.select("#node-" + d[name].key).classed(name, value);
+    svg.select("#node-" + d[name].id).classed(name, value);
   };
 }
 
